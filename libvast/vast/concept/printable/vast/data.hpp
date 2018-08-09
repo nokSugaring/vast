@@ -15,16 +15,16 @@
 
 #include "vast/data.hpp"
 
+#include "vast/concept/printable/caf/ip_address.hpp"
+#include "vast/concept/printable/caf/ip_subnet.hpp"
+#include "vast/concept/printable/core/printer.hpp"
 #include "vast/concept/printable/numeric.hpp"
 #include "vast/concept/printable/print.hpp"
-#include "vast/concept/printable/string.hpp"
-#include "vast/concept/printable/core/printer.hpp"
 #include "vast/concept/printable/std/chrono.hpp"
-#include "vast/concept/printable/vast/address.hpp"
-#include "vast/concept/printable/vast/subnet.hpp"
+#include "vast/concept/printable/string.hpp"
+#include "vast/concept/printable/vast/none.hpp"
 #include "vast/concept/printable/vast/pattern.hpp"
 #include "vast/concept/printable/vast/port.hpp"
-#include "vast/concept/printable/vast/none.hpp"
 #include "vast/concept/printable/vast/type.hpp"
 
 #include "vast/detail/overload.hpp"

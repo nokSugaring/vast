@@ -33,8 +33,8 @@ namespace {
 inline type make_packet_type() {
   auto packet = record_type{
     {"meta", record_type{
-      {"src", address_type{}},
-      {"dst", address_type{}},
+      {"src", ip_address_type{}},
+      {"dst", ip_address_type{}},
       {"sport", port_type{}},
       {"dport", port_type{}}}},
     {"data", string_type{}.attributes({{"skip"}})}
@@ -134,6 +134,11 @@ expected<event> reader::read() {
   uint8_t layer4_proto = 0;
   auto layer2_type = *reinterpret_cast<const uint16_t*>(data + 12);
   uint64_t payload_size = packet_size;
+  auto u32_to_addr = [](uint32_t x) {
+    caf::ipv4_address res;
+    res.bits(x);
+    return caf::ip_address{res};
+  };
   switch (detail::to_host_order(layer2_type)) {
     default:
       return no_error; // Skip all non-IP packets.
@@ -144,10 +149,10 @@ expected<event> reader::read() {
       if (header_size < 20)
         return make_error(ec::format_error, "IPv4 header too short: ",
                           header_size, " bytes");
-      auto orig_h = reinterpret_cast<const uint32_t*>(layer3 + 12);
-      auto resp_h = reinterpret_cast<const uint32_t*>(layer3 + 16);
-      conn.src = {orig_h, address::ipv4, address::network};
-      conn.dst = {resp_h, address::ipv4, address::network};
+      auto orig_h = *reinterpret_cast<const uint32_t*>(layer3 + 12);
+      auto resp_h = *reinterpret_cast<const uint32_t*>(layer3 + 16);
+      conn.src = u32_to_addr(orig_h);
+      conn.dst = u32_to_addr(resp_h);
       layer4_proto = *(layer3 + 9);
       layer4 = layer3 + header_size;
       payload_size -= header_size;
@@ -155,10 +160,10 @@ expected<event> reader::read() {
     case 0x86dd: {
       if (header->len < 14 + 40)
         return make_error(ec::format_error, "IPv6 header too short");
-      auto orig_h = reinterpret_cast<const uint32_t*>(layer3 + 8);
-      auto resp_h = reinterpret_cast<const uint32_t*>(layer3 + 24);
-      conn.src = {orig_h, address::ipv4, address::network};
-      conn.dst = {resp_h, address::ipv4, address::network};
+      auto orig_h = *reinterpret_cast<const uint32_t*>(layer3 + 8);
+      auto resp_h = *reinterpret_cast<const uint32_t*>(layer3 + 24);
+      conn.src = u32_to_addr(orig_h);
+      conn.dst = u32_to_addr(resp_h);
       layer4_proto = *(layer3 + 6);
       layer4 = layer3 + 40;
       payload_size -= 40;

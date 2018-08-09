@@ -73,8 +73,8 @@ VAST_DEFINE_BASIC_TYPE_PRINTER(timespan_type, "duration")
 VAST_DEFINE_BASIC_TYPE_PRINTER(timestamp_type, "time")
 VAST_DEFINE_BASIC_TYPE_PRINTER(string_type, "string")
 VAST_DEFINE_BASIC_TYPE_PRINTER(pattern_type, "pattern")
-VAST_DEFINE_BASIC_TYPE_PRINTER(address_type, "addr")
-VAST_DEFINE_BASIC_TYPE_PRINTER(subnet_type, "subnet")
+VAST_DEFINE_BASIC_TYPE_PRINTER(ip_address_type, "addr")
+VAST_DEFINE_BASIC_TYPE_PRINTER(ip_subnet_type, "subnet")
 VAST_DEFINE_BASIC_TYPE_PRINTER(port_type, "port")
 #undef VAST_DEFINE_BASIC_TYPE_PRINTER
 
@@ -139,8 +139,8 @@ struct type_printer : printer<type_printer<Policy>> {
              | timestamp_type_printer{}
              | string_type_printer{}
              | pattern_type_printer{}
-             | address_type_printer{}
-             | subnet_type_printer{}
+             | ip_address_type_printer{}
+             | ip_subnet_type_printer{}
              | port_type_printer{}
              | enumeration_type_printer{}
              | vector_type_printer{}

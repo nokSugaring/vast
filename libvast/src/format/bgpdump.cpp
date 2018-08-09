@@ -21,13 +21,13 @@ bgpdump_parser::bgpdump_parser() {
   // Announce type.
   auto fields = std::vector<record_field>{
     {"timestamp", timestamp_type{}},
-    {"source_ip", address_type{}},
+    {"source_ip", ip_address_type{}},
     {"source_as", count_type{}},
-    {"prefix", subnet_type{}},
+    {"prefix", ip_subnet_type{}},
     {"as_path", vector_type{count_type{}}},
     {"origin_as", count_type{}},
     {"origin", string_type{}},
-    {"nexthop", address_type{}},
+    {"nexthop", ip_address_type{}},
     {"local_pref", count_type{}},
     {"med", count_type{}},
     {"community", string_type{}},
@@ -39,16 +39,16 @@ bgpdump_parser::bgpdump_parser() {
   route_type = record_type{std::move(fields)}.name("bgpdump::routing");
   auto withdraw_fields = std::vector<record_field>{
     {"timestamp", timestamp_type{}},
-    {"source_ip", address_type{}},
+    {"source_ip", ip_address_type{}},
     {"source_as", count_type{}},
-    {"prefix", subnet_type{}},
+    {"prefix", ip_subnet_type{}},
   };
   withdraw_type =
     record_type{std::move(withdraw_fields)}.name("bgpdump::withdrawn");
   // State-change type.
   auto state_change_fields = std::vector<record_field>{
     {"timestamp", timestamp_type{}},
-    {"source_ip", address_type{}},
+    {"source_ip", ip_address_type{}},
     {"source_as", count_type{}},
     {"old_state", string_type{}},
     {"new_state", string_type{}},

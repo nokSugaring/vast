@@ -54,9 +54,9 @@ expected<type> parse_type(std::string_view bro_type) {
   else if (bro_type == "pattern")
     t = pattern_type{};
   else if (bro_type == "addr")
-    t = address_type{};
+    t = ip_address_type{};
   else if (bro_type == "subnet")
-    t = subnet_type{};
+    t = ip_subnet_type{};
   else if (bro_type == "port")
     t = port_type{};
   if (caf::holds_alternative<none_type>(t)

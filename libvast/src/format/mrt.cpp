@@ -302,22 +302,22 @@ reader::reader(std::unique_ptr<std::istream> input) : input_{std::move(input)} {
   types_.table_dump_v2_peer_entry_type = record_type{{
     {"index", count_type{}},
     {"bgp_id", count_type{}},
-    {"ip_address", address_type{}},
+    {"ip_address", ip_address_type{}},
     {"as", count_type{}},
   }}.name("mrt::table_dump_v2::peer_entry");
   types_.table_dump_v2_rib_entry_type = record_type{{
     {"peer_index", count_type{}},
-    {"prefix", subnet_type{}},
+    {"prefix", ip_subnet_type{}},
     {"as_path", vector_type{count_type{}}},
     {"origin_as", count_type{}},
     {"origin", string_type{}.attributes({{"skip"}})},
-    {"nexthop", address_type{}},
+    {"nexthop", ip_address_type{}},
     {"local_pref", count_type{}},
     {"med", count_type{}},
     {"community", vector_type{count_type{}}},
     {"atomic_aggregate", boolean_type{}},
     {"aggregator_as", count_type{}},
-    {"aggregator_ip", address_type{}},
+    {"aggregator_ip", ip_address_type{}},
   }}.name("mrt::table_dump_v2::rib_entry");
   types_.bgp4mp_open_type = record_type{{
     {"version", count_type{}},
@@ -326,24 +326,24 @@ reader::reader(std::unique_ptr<std::istream> input) : input_{std::move(input)} {
     {"bgp_identifier", count_type{}},
   }}.name("mrt::bgp4mp::open");
   types_.bgp4mp_update_announcement_type = record_type{{
-    {"source_ip", address_type{}},
+    {"source_ip", ip_address_type{}},
     {"source_as", count_type{}},
-    {"prefix", subnet_type{}},
+    {"prefix", ip_subnet_type{}},
     {"as_path", vector_type{count_type{}}},
     {"origin_as", count_type{}},
     {"origin", string_type{}.attributes({{"skip"}})},
-    {"nexthop", address_type{}},
+    {"nexthop", ip_address_type{}},
     {"local_pref", count_type{}},
     {"med", count_type{}},
     {"community", vector_type{count_type{}}},
     {"atomic_aggregate", boolean_type{}},
     {"aggregator_as", count_type{}},
-    {"aggregator_ip", address_type{}},
+    {"aggregator_ip", ip_address_type{}},
   }}.name("mrt::bgp4mp::update::announcement");
   types_.bgp4mp_update_withdraw_type = record_type{{
-    {"source_ip", address_type{}},
+    {"source_ip", ip_address_type{}},
     {"source_as", count_type{}},
-    {"prefix", subnet_type{}},
+    {"prefix", ip_subnet_type{}},
   }}.name("mrt::bgp4mp::update::withdrawn");
   types_.bgp4mp_notification_type = record_type{{
     {"error_code", count_type{}},
@@ -352,7 +352,7 @@ reader::reader(std::unique_ptr<std::istream> input) : input_{std::move(input)} {
   types_.bgp4mp_keepalive_type = record_type{
   }.name("mrt::bgp4mp::keepalive");
   types_.bgp4mp_state_change_type = record_type{{
-    {"source_ip", address_type{}},
+    {"source_ip", ip_address_type{}},
     {"source_as", count_type{}},
     {"old_state", count_type{}},
     {"new_state", count_type{}},

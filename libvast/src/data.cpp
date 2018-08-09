@@ -87,8 +87,8 @@ struct adder {
   std::enable_if_t<
     !(std::is_same<U, vector>{} || std::is_same<U, set>{})
       && (std::is_same<T, pattern>{}
-          || std::is_same<T, address>{}
-          || std::is_same<T, subnet>{}
+          || std::is_same<T, caf::ip_address>{}
+          || std::is_same<T, caf::ip_subnet>{}
           || std::is_same<T, port>{}
           || std::is_same<T, enumeration>{}
           || std::is_same<T, map>{})
@@ -180,10 +180,10 @@ bool evaluate(const data& lhs, relational_operator op, const data& rhs) {
       [](const std::string& lhs, const pattern& rhs) {
         return rhs.search(lhs);
       },
-      [](const address& lhs, const subnet& rhs) {
+      [](const caf::ip_address& lhs, const caf::ip_subnet& rhs) {
         return rhs.contains(lhs);
       },
-      [](const subnet& lhs, const subnet& rhs) {
+      [](const caf::ip_subnet& lhs, const caf::ip_subnet& rhs) {
         return rhs.contains(lhs);
       },
       [](const auto& lhs, const vector& rhs) {

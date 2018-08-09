@@ -60,8 +60,8 @@ using concrete_types = caf::detail::type_list<
   timestamp_type,
   string_type,
   pattern_type,
-  address_type,
-  subnet_type,
+  ip_address_type,
+  ip_subnet_type,
   port_type,
   enumeration_type,
   vector_type,
@@ -407,11 +407,11 @@ struct pattern_type final : basic_type<pattern_type> {};
 
 /// A type for IP addresses, both v4 and v6.
 /// @relates type
-struct address_type final : basic_type<address_type> {};
+struct ip_address_type final : basic_type<ip_address_type> {};
 
 /// A type for IP prefixes.
 /// @relates type
-struct subnet_type final : basic_type<subnet_type> {};
+struct ip_subnet_type final : basic_type<ip_subnet_type> {};
 
 /// A type for transport-layer ports.
 /// @relates type
@@ -681,8 +681,6 @@ VAST_TYPE_TRAIT(real);
 VAST_TYPE_TRAIT(timespan);
 VAST_TYPE_TRAIT(timestamp);
 VAST_TYPE_TRAIT(pattern);
-VAST_TYPE_TRAIT(address);
-VAST_TYPE_TRAIT(subnet);
 VAST_TYPE_TRAIT(port);
 VAST_TYPE_TRAIT(enumeration);
 VAST_TYPE_TRAIT(vector);
@@ -690,6 +688,16 @@ VAST_TYPE_TRAIT(set);
 VAST_TYPE_TRAIT(map);
 
 #undef VAST_TYPE_TRAIT
+
+template <>
+struct type_traits<ip_address_type> {
+  using data_type = caf::ip_address;
+};
+
+template <>
+struct type_traits<ip_subnet_type> {
+  using data_type = caf::ip_subnet;
+};
 
 template <>
 struct type_traits<none_type> {

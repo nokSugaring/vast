@@ -13,51 +13,37 @@
 
 #pragma once
 
-#include "vast/subnet.hpp"
+#include <caf/ip_subnet.hpp>
+#include <caf/ipv4_subnet.hpp>
 
-#include "vast/concept/parseable/core/parser.hpp"
-#include "vast/concept/parseable/numeric/integral.hpp"
-#include "vast/concept/parseable/vast/address.hpp"
+#include "vast/concept/printable/caf/ip_address.hpp"
+#include "vast/concept/printable/caf/ip_subnet.hpp"
+#include "vast/concept/printable/core.hpp"
+#include "vast/concept/printable/numeric/integral.hpp"
+#include "vast/concept/printable/string/char.hpp"
 
 namespace vast {
 
-template <>
-struct access::parser<subnet> : vast::parser<access::parser<subnet>> {
-  using attribute = subnet;
-
-  static auto make() {
-    using namespace parsers;
-    auto addr = make_parser<address>{};
-    auto prefix = u8.with([](auto x) { return x <= 128; });
-    return addr >> '/' >> prefix;
-  }
+struct subnet_printer : printer<subnet_printer> {
+  using attribute = caf::ip_subnet;
 
   template <class Iterator>
-  bool parse(Iterator& f, const Iterator& l, unused_type) const {
-    static auto p = make();
-    return p(f, l, unused);
-  }
-
-  template <class Iterator>
-  bool parse(Iterator& f, const Iterator& l, subnet& a) const {
-    static auto p = make();
-    if (!p(f, l, a.network_, a.length_))
-      return false;
-    a.initialize();
-    return true;
+  bool print(Iterator& out, const attribute& sn) const {
+    using namespace printers;
+    if (sn.embeds_v4()) {
+      auto v4 = sn.embedded_v4();
+      return (addr << chr<'/'> << u8)(out, sn.network_address(),
+                                      v4.prefix_length());
+    }
+    return (addr << chr<'/'> << u8)(out, sn.network_address(),
+                                    sn.prefix_length());
   }
 };
 
 template <>
-struct parser_registry<subnet> {
-  using type = access::parser<subnet>;
+struct printer_registry<caf::ip_subnet> {
+  using type = subnet_printer;
 };
-
-namespace parsers {
-
-static auto const net = make_parser<vast::subnet>();
-
-} // namespace parsers
 
 } // namespace vast
 

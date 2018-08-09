@@ -11,14 +11,18 @@
  * contained in the LICENSE file.                                             *
  ******************************************************************************/
 
-#include "vast/concept/parseable/to.hpp"
-#include "vast/event.hpp"
+#define SUITE format
 
 #include "vast/format/bro.hpp"
 
-#define SUITE format
 #include "test.hpp"
 #include "fixtures/events.hpp"
+
+#include <caf/ip_address.hpp>
+#include <caf/ip_subnet.hpp>
+
+#include "vast/concept/parseable/to.hpp"
+#include "vast/event.hpp"
 
 using namespace vast;
 using namespace std::string_literals;
@@ -48,10 +52,10 @@ TEST(bro data parsing) {
   CHECK(d == ts);
   CHECK(bro_parse(string_type{}, "\\x2afoo*"s, d));
   CHECK(d == "*foo*");
-  CHECK(bro_parse(address_type{}, "192.168.1.103", d));
-  CHECK(d == *to<address>("192.168.1.103"));
-  CHECK(bro_parse(subnet_type{}, "10.0.0.0/24", d));
-  CHECK(d == *to<subnet>("10.0.0.0/24"));
+  CHECK(bro_parse(ip_address_type{}, "192.168.1.103", d));
+  CHECK(d == *to<caf::ip_address>("192.168.1.103"));
+  CHECK(bro_parse(ip_subnet_type{}, "10.0.0.0/24", d));
+  CHECK(d == *to<caf::ip_subnet>("10.0.0.0/24"));
   CHECK(bro_parse(port_type{}, "49329", d));
   CHECK(d == port{49329, port::unknown});
   CHECK(bro_parse(vector_type{integer_type{}}, "49329", d));

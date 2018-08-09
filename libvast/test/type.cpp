@@ -116,8 +116,8 @@ TEST(less-than comparison) {
 }
 
 TEST(strict weak ordering) {
-  std::vector<type> xs{string_type{}, address_type{}, pattern_type{}};
-  std::vector<type> ys{string_type{}, pattern_type{}, address_type{}};
+  std::vector<type> xs{string_type{}, ip_address_type{}, pattern_type{}};
+  std::vector<type> ys{string_type{}, pattern_type{}, ip_address_type{}};
   std::sort(xs.begin(), xs.end());
   std::sort(ys.begin(), ys.end());
   CHECK(xs == ys);
@@ -142,16 +142,16 @@ TEST(introspection) {
 }
 
 TEST(type/data compatibility) {
-  CHECK(compatible(address_type{}, in, subnet_type{}));
-  CHECK(compatible(address_type{}, in, subnet{}));
-  CHECK(compatible(subnet_type{}, in, subnet_type{}));
-  CHECK(compatible(subnet_type{}, in, subnet{}));
+  CHECK(compatible(ip_address_type{}, in, ip_subnet_type{}));
+  CHECK(compatible(ip_address_type{}, in, caf::ip_subnet{}));
+  CHECK(compatible(ip_subnet_type{}, in, ip_subnet_type{}));
+  CHECK(compatible(ip_subnet_type{}, in, caf::ip_subnet{}));
 }
 
 TEST(serialization) {
   auto r = record_type{
     {"x", integer_type{}},
-    {"y", address_type{}},
+    {"y", ip_address_type{}},
     {"z", real_type{}.attributes({{"key", "value"}})}
   };
   // Make it recursive.
@@ -177,7 +177,7 @@ TEST(record range) {
                     {"k", boolean_type{}}
                   }},
             {"m", record_type{
-                    {"y", record_type{{"a", address_type{}}}},
+                    {"y", record_type{{"a", ip_address_type{}}}},
                     {"f", real_type{}}
                   }},
             {"b", boolean_type{}}
@@ -198,7 +198,7 @@ TEST(record resolving) {
     {"b", count_type{}},
     {"c", record_type{
       {"x", integer_type{}},
-      {"y", address_type{}},
+      {"y", ip_address_type{}},
       {"z", real_type{}}
     }}
   };
@@ -233,7 +233,7 @@ TEST(record flattening/unflattening) {
         {"k", boolean_type{}}
       }},
       {"m", record_type{
-        {"y", record_type{{"a", address_type{}}}},
+        {"y", record_type{{"a", ip_address_type{}}}},
         {"f", real_type{}}
       }},
       {"b", boolean_type{}}
@@ -245,7 +245,7 @@ TEST(record flattening/unflattening) {
   auto y = record_type{{
     {"x.y.z", integer_type{}},
     {"x.y.k", boolean_type{}},
-    {"x.m.y.a", address_type{}},
+    {"x.m.y.a", ip_address_type{}},
     {"x.m.f", real_type{}},
     {"x.b", boolean_type{}},
     {"y.b", boolean_type{}}
@@ -265,7 +265,7 @@ TEST(record flat index computation) {
       }},
       {"m", record_type{
         {"y", record_type{
-          {"a", address_type{}}} // 2: x.m.y.a [0, 1, 0, 0]
+          {"a", ip_address_type{}}} // 2: x.m.y.a [0, 1, 0, 0]
         },
         {"f", real_type{}} // 3: x.m.f [0, 1, 1]
       }},
@@ -298,7 +298,7 @@ TEST(record symbol finding) {
       {"b", count_type{}},
       {"c", record_type{
         {"x", integer_type{}},
-        {"y", address_type{}},
+        {"y", ip_address_type{}},
         {"z", real_type{}}
       }}
     }},
@@ -315,10 +315,10 @@ TEST(record symbol finding) {
   CHECK(holds_alternative<integer_type>(*first));
   auto deep = r.at("b.c.y");
   REQUIRE(deep);
-  CHECK(holds_alternative<address_type>(*deep));
+  CHECK(holds_alternative<ip_address_type>(*deep));
   deep = f.at("b.c.y");
   REQUIRE(deep);
-  CHECK(holds_alternative<address_type>(*deep));
+  CHECK(holds_alternative<ip_address_type>(*deep));
   auto rec = r.at("b");
   REQUIRE(rec);
   CHECK(holds_alternative<record_type>(*rec));
@@ -431,11 +431,11 @@ TEST(congruence) {
   CHECK(!congruent(s1, s2));
   MESSAGE("records");
   auto r0 = record_type{
-    {"a", address_type{}},
+    {"a", ip_address_type{}},
     {"b", boolean_type{}},
     {"c", count_type{}}};
   auto r1 = record_type{
-    {"x", address_type{}},
+    {"x", ip_address_type{}},
     {"y", boolean_type{}},
     {"z", count_type{}}};
   CHECK(r0 != r1);
@@ -462,8 +462,8 @@ TEST(printable) {
   CHECK_EQUAL(to_string(timestamp_type{}), "time");
   CHECK_EQUAL(to_string(string_type{}), "string");
   CHECK_EQUAL(to_string(pattern_type{}), "pattern");
-  CHECK_EQUAL(to_string(address_type{}), "addr");
-  CHECK_EQUAL(to_string(subnet_type{}), "subnet");
+  CHECK_EQUAL(to_string(ip_address_type{}), "addr");
+  CHECK_EQUAL(to_string(ip_subnet_type{}), "subnet");
   CHECK_EQUAL(to_string(port_type{}), "port");
   MESSAGE("enumeration_type");
   auto e = enumeration_type{{"foo", "bar", "baz"}};
@@ -519,7 +519,7 @@ TEST(parseable) {
   CHECK(parsers::type("string", t));
   CHECK(t == string_type{});
   CHECK(parsers::type("addr", t));
-  CHECK(t == address_type{});
+  CHECK(t == ip_address_type{});
   MESSAGE("enum");
   CHECK(parsers::type("enum{foo, bar, baz}", t));
   CHECK(t == enumeration_type{{"foo", "bar", "baz"}});
@@ -535,7 +535,7 @@ TEST(parseable) {
   CHECK(parsers::type(str, t));
   auto r = record_type{
     {"r", record_type{
-      {"a", address_type{}},
+      {"a", ip_address_type{}},
       {"i", record_type{{"b", boolean_type{}}}}
     }}
   };
@@ -586,8 +586,8 @@ TEST(hashable) {
   CHECK_EQUAL(hash(boolean_type{}), 12612883901365648434ul);
   CHECK_EQUAL(hash(type{boolean_type{}}), 13047344884484907481ul);
   CHECK_NOT_EQUAL(hash(type{boolean_type{}}), hash(boolean_type{}));
-  CHECK_EQUAL(hash(boolean_type{}), hash(address_type{}));
-  CHECK_NOT_EQUAL(hash(type{boolean_type{}}), hash(type{address_type{}}));
+  CHECK_EQUAL(hash(boolean_type{}), hash(ip_address_type{}));
+  CHECK_NOT_EQUAL(hash(type{boolean_type{}}), hash(type{ip_address_type{}}));
   auto x = record_type{
     {"x", integer_type{}},
     {"y", string_type{}},
@@ -603,7 +603,7 @@ TEST(json) {
   auto t = map_type{boolean_type{}, count_type{}};
   t = t.name("bit_table");
   auto r = record_type{
-    {"x", address_type{}.attributes({{"skip"}})},
+    {"x", ip_address_type{}.attributes({{"skip"}})},
     {"y", boolean_type{}.attributes({{"default", "F"}})},
     {"z", record_type{{"inner", e}}}
   };

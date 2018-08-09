@@ -49,9 +49,9 @@ TEST(parseable/printable - predicate) {
   // LHS: data, RHS: type
   str = "10.0.0.0/8 ni :addr";
   CHECK(parsers::predicate(str, pred));
-  CHECK(pred.lhs == data{*to<subnet>("10.0.0.0/8")});
+  CHECK(pred.lhs == data{*to<caf::ip_subnet>("10.0.0.0/8")});
   CHECK(pred.op == ni);
-  CHECK(pred.rhs == type_extractor{address_type{}});
+  CHECK(pred.rhs == type_extractor{ip_address_type{}});
   CHECK_EQUAL(to_string(pred), str);
   // LHS: type, RHS: data
   str = ":real >= -4.8";

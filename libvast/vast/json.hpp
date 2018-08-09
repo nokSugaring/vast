@@ -165,7 +165,9 @@ bool convert(T x, json& j) {
   if constexpr (std::is_arithmetic_v<T>)
     j = json::number(x);
   else if constexpr (std::is_convertible_v<T, std::string>)
-    j = std::string(std::forward<T>(x));
+    j = std::string(x);
+  else if constexpr (caf::detail::has_to_string<T>::value)
+    j = to_string(x);
   else
     static_assert(detail::always_false_v<T>);
   return true;

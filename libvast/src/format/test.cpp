@@ -11,6 +11,11 @@
  * contained in the LICENSE file.                                             *
  ******************************************************************************/
 
+#include <array>
+
+#include <caf/ip_address.hpp>
+#include <caf/ip_subnet.hpp>
+
 #include "vast/concept/parseable/core.hpp"
 #include "vast/concept/parseable/numeric/real.hpp"
 #include "vast/concept/parseable/string/char_class.hpp"
@@ -167,23 +172,21 @@ struct randomizer {
       c = unif_char(gen);
   }
 
-  void operator()(const address_type&, address& addr) {
+  void operator()(const ip_address_type&, caf::ip_address& addr) {
     // We hash the generated sample into a 128-bit digest to spread out the
     // bits over the entire domain of an IPv6 address.
     lcg gen{static_cast<lcg::result_type>(sample())};
-    std::uniform_int_distribution<uint32_t> unif0;
-    uint32_t bytes[4];
+    std::uniform_int_distribution<uint8_t> unif0;
+    std::array<uint8_t, 16> bytes;
     for (auto& byte : bytes)
       byte = unif0(gen);
     // P[ip == v6] = 0.5
-    std::uniform_int_distribution<uint8_t> unif1{0, 1};
-    auto version = unif1(gen_) == 0 ? address::ipv4 : address::ipv6;
-    addr = {bytes, version, address::network};
+    addr = caf::ip_address{bytes};
   }
 
-  void operator()(const subnet_type&, subnet& sn) {
-    static type addr_type = address_type{};
-    address addr;
+  void operator()(const ip_subnet_type&, caf::ip_subnet& sn) {
+    static type addr_type = ip_address_type{};
+    caf::ip_address addr;
     (*this)(addr_type, addr);
     std::uniform_int_distribution<uint8_t> unif{0, 128};
     sn = {std::move(addr), unif(gen_)};

@@ -200,7 +200,7 @@ TEST(matcher) {
   auto r = record_type{
     {"x", real_type{}},
     {"y", port_type{}},
-    {"z", address_type{}}
+    {"z", ip_address_type{}}
   };
   CHECK(match(":count == 42 || :real < 4.2", r));
   CHECK(match(":port == 80/tcp && :real < 4.2", r));

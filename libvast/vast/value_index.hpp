@@ -458,11 +458,11 @@ struct value_index_inspect_helper {
       return f_(static_cast<string_index&>(idx_));
     }
 
-    result_type operator()(const address_type&) const {
+    result_type operator()(const ip_address_type&) const {
       return f_(static_cast<address_index&>(idx_));
     }
 
-    result_type operator()(const subnet_type&) const {
+    result_type operator()(const ip_subnet_type&) const {
       return f_(static_cast<subnet_index&>(idx_));
     }
 
@@ -522,11 +522,11 @@ struct value_index_inspect_helper {
       return std::make_unique<string_index>();
     }
 
-    result_type operator()(const address_type&) const {
+    result_type operator()(const ip_address_type&) const {
       return std::make_unique<address_index>();
     }
 
-    result_type operator()(const subnet_type&) const {
+    result_type operator()(const ip_subnet_type&) const {
       return std::make_unique<subnet_index>();
     }
 

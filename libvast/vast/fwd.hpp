@@ -20,7 +20,6 @@ namespace vast {
 // -- classes ------------------------------------------------------------------
 
 class abstract_type;
-class address;
 class column_index;
 class const_table_slice_handle;
 class data;
@@ -28,6 +27,7 @@ class default_table_slice;
 class default_table_slice_builder;
 class event;
 class expression;
+class ip_address;
 class json;
 class meta_index;
 class path;
@@ -35,7 +35,6 @@ class pattern;
 class port;
 class schema;
 class store;
-class subnet;
 class table_index;
 class table_slice;
 class table_slice_builder;
@@ -45,12 +44,13 @@ class value;
 
 // -- structs ------------------------------------------------------------------
 
-struct address_type;
 struct alias_type;
 struct boolean_type;
 struct count_type;
 struct enumeration_type;
 struct integer_type;
+struct ip_address_type;
+struct ip_subnet_type;
 struct map_type;
 struct none_type;
 struct pattern_type;
@@ -59,7 +59,6 @@ struct real_type;
 struct record_type;
 struct set_type;
 struct string_type;
-struct subnet_type;
 struct timespan_type;
 struct timestamp_type;
 struct vector_type;

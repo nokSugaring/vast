@@ -17,14 +17,14 @@
 
 #include "vast/data.hpp"
 
+#include "vast/concept/parseable/caf/ip_address.hpp"
+#include "vast/concept/parseable/caf/ip_subnet.hpp"
 #include "vast/concept/parseable/core/parser.hpp"
 #include "vast/concept/parseable/core/rule.hpp"
 #include "vast/concept/parseable/numeric.hpp"
 #include "vast/concept/parseable/string/quoted_string.hpp"
-#include "vast/concept/parseable/vast/address.hpp"
 #include "vast/concept/parseable/vast/pattern.hpp"
 #include "vast/concept/parseable/vast/port.hpp"
-#include "vast/concept/parseable/vast/subnet.hpp"
 #include "vast/concept/parseable/vast/time.hpp"
 
 namespace vast {

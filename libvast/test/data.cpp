@@ -73,7 +73,7 @@ TEST(flatten) {
       {"d", vector_type{integer_type{}}}
     }},
     {"e", record_type{
-      {"f", address_type{}},
+      {"f", ip_address_type{}},
       {"g", port_type{}}
     }},
     {"f", boolean_type{}}
@@ -101,8 +101,8 @@ TEST(construction) {
   CHECK(caf::holds_alternative<std::string>(data{"foo"}));
   CHECK(caf::holds_alternative<std::string>(data{std::string{"foo"}}));
   CHECK(caf::holds_alternative<pattern>(data{pattern{"foo"}}));
-  CHECK(caf::holds_alternative<address>(data{address{}}));
-  CHECK(caf::holds_alternative<subnet>(data{subnet{}}));
+  CHECK(caf::holds_alternative<caf::ip_address>(data{caf::ip_address{}}));
+  CHECK(caf::holds_alternative<caf::ip_subnet>(data{caf::ip_subnet{}}));
   CHECK(caf::holds_alternative<port>(data{port{53, port::udp}}));
   CHECK(caf::holds_alternative<vector>(data{vector{}}));
   CHECK(caf::holds_alternative<set>(data{set{}}));
@@ -168,12 +168,12 @@ TEST(evaluation) {
   CHECK(evaluate(lhs, not_equal, rhs));
   CHECK(!evaluate(lhs, equal, rhs));
   MESSAGE("network types");
-  lhs = *to<address>("10.0.0.1");
-  rhs = *to<subnet>("10.0.0.0/8");
+  lhs = *to<caf::ip_address>("10.0.0.1");
+  rhs = *to<caf::ip_subnet>("10.0.0.0/8");
   CHECK(evaluate(lhs, in, rhs));
-  lhs = *to<subnet>("10.0.42.0/16");
+  lhs = *to<caf::ip_subnet>("10.0.42.0/16");
   CHECK(evaluate(lhs, in, rhs));
-  rhs = *to<subnet>("10.0.42.0/17");
+  rhs = *to<caf::ip_subnet>("10.0.42.0/17");
   CHECK(!evaluate(lhs, in, rhs));
   MESSAGE("mixed types");
   rhs = real{4.2};
@@ -251,7 +251,7 @@ TEST(parseable) {
   l = str.end();
   CHECK(p(f, l, d));
   CHECK(f == l);
-  CHECK(d == *to<address>("10.0.0.1"));
+  CHECK(d == *to<caf::ip_address>("10.0.0.1"));
   MESSAGE("port");
   str = "22/tcp"s;
   f = str.begin();

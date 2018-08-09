@@ -14,8 +14,8 @@
 #include "vast/error.hpp"
 #include "vast/event.hpp"
 
+#include "vast/concept/parseable/caf/ip_address.hpp"
 #include "vast/concept/parseable/to.hpp"
-#include "vast/concept/parseable/vast/address.hpp"
 #include "vast/filesystem.hpp"
 
 #include "vast/format/pcap.hpp"
@@ -46,9 +46,9 @@ TEST(PCAP read/write 1) {
   REQUIRE(pkt);
   auto conn_id = caf::get_if<vector>(&pkt->at(0));
   REQUIRE(conn_id); //[192.168.1.1, 192.168.1.71, 53/udp, 64480/udp]
-  auto src = caf::get_if<address>(&conn_id->at(0));
+  auto src = caf::get_if<caf::ip_address>(&conn_id->at(0));
   REQUIRE(src);
-  CHECK_EQUAL(*src, *to<address>("192.168.1.1"));
+  CHECK_EQUAL(*src, *to<caf::ip_address>("192.168.1.1"));
   MESSAGE("write out read packets");
   auto file = "vast-unit-test-nmap-vsn.pcap";
   format::pcap::writer writer{file};

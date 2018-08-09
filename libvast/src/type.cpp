@@ -596,11 +596,11 @@ struct data_congruence_checker {
     return true;
   }
 
-  bool operator()(const address_type&, const address&) const {
+  bool operator()(const ip_address_type&, const caf::ip_address&) const {
     return true;
   }
 
-  bool operator()(const subnet_type&, const subnet&) const {
+  bool operator()(const ip_subnet_type&, const caf::ip_subnet&) const {
     return true;
   }
 
@@ -685,9 +685,9 @@ bool compatible(const type& lhs, relational_operator op, const type& rhs) {
     case not_in:
       if (holds_alternative<string_type>(lhs))
         return holds_alternative<string_type>(rhs) || is_container(rhs);
-      else if (holds_alternative<address_type>(lhs)
-               || holds_alternative<subnet_type>(lhs))
-        return holds_alternative<subnet_type>(rhs) || is_container(rhs);
+      else if (holds_alternative<ip_address_type>(lhs)
+               || holds_alternative<ip_subnet_type>(lhs))
+        return holds_alternative<ip_subnet_type>(rhs) || is_container(rhs);
       else
         return is_container(rhs);
     case ni:
@@ -717,18 +717,18 @@ bool compatible(const type& lhs, relational_operator op, const data& rhs) {
     case not_in:
       if (holds_alternative<string_type>(lhs))
         return holds_alternative<std::string>(rhs) || is_container(rhs);
-      else if (holds_alternative<address_type>(lhs)
-               || holds_alternative<subnet_type>(lhs))
-        return holds_alternative<subnet>(rhs) || is_container(rhs);
+      else if (holds_alternative<ip_address_type>(lhs)
+               || holds_alternative<ip_subnet_type>(lhs))
+        return holds_alternative<caf::ip_subnet>(rhs) || is_container(rhs);
       else
         return is_container(rhs);
     case ni:
     case not_ni:
       if (holds_alternative<std::string>(rhs))
         return holds_alternative<string_type>(lhs) || is_container(lhs);
-      else if (holds_alternative<address>(rhs)
-               || holds_alternative<subnet>(rhs))
-        return holds_alternative<subnet_type>(lhs) || is_container(lhs);
+      else if (holds_alternative<caf::ip_address>(rhs)
+               || holds_alternative<caf::ip_subnet>(rhs))
+        return holds_alternative<ip_subnet_type>(lhs) || is_container(lhs);
       else
         return is_container(lhs);
   }

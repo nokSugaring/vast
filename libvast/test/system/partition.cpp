@@ -83,7 +83,7 @@ struct fixture : fixtures::deterministic_actor_system_and_events {
   }
 
   fixture()
-    : layouts{rec<string_type>(), rec<address_type>(), rec<pattern_type>()} {
+    : layouts{rec<string_type>(), rec<ip_address_type>(), rec<pattern_type>()} {
     min_running_actors = sys.registry().running();
   }
 

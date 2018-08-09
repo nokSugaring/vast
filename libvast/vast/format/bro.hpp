@@ -19,11 +19,14 @@
 #include <unordered_map>
 #include <vector>
 
+#include <caf/ip_address.hpp>
+#include <caf/ip_subnet.hpp>
+
+#include "vast/concept/parseable/caf/ip_address.hpp"
+#include "vast/concept/parseable/caf/ip_subnet.hpp"
 #include "vast/concept/parseable/core.hpp"
 #include "vast/concept/parseable/numeric.hpp"
 #include "vast/concept/parseable/string/any.hpp"
-#include "vast/concept/parseable/vast/address.hpp"
-#include "vast/concept/parseable/vast/subnet.hpp"
 #include "vast/data.hpp"
 #include "vast/expected.hpp"
 #include "vast/filesystem.hpp"
@@ -99,13 +102,13 @@ struct bro_parser {
     return parse(p);
   }
 
-  bool operator()(const address_type&) const {
-    static auto p = parsers::addr ->* [](address x) { return x; };
+  bool operator()(const ip_address_type&) const {
+    static auto p = parsers::addr ->* [](caf::ip_address x) { return x; };
     return parse(p);
   }
 
-  bool operator()(const subnet_type&) const {
-    static auto p = parsers::net ->* [](subnet x) { return x; };
+  bool operator()(const ip_subnet_type&) const {
+    static auto p = parsers::net ->* [](caf::ip_subnet x) { return x; };
     return parse(p);
   }
 
@@ -177,12 +180,12 @@ struct bro_parser_factory {
         ->* [](std::string x) { return detail::byte_unescape(x); };
   }
 
-  result_type operator()(const address_type&) const {
-    return parsers::addr ->* [](address x) { return x; };
+  result_type operator()(const ip_address_type&) const {
+    return parsers::addr ->* [](caf::ip_address x) { return x; };
   }
 
-  result_type operator()(const subnet_type&) const {
-    return parsers::net ->* [](subnet x) { return x; };
+  result_type operator()(const ip_subnet_type&) const {
+    return parsers::net ->* [](caf::ip_subnet x) { return x; };
   }
 
   result_type operator()(const port_type&) const {

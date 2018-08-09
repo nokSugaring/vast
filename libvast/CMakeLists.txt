@@ -13,7 +13,6 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR})
 file(GLOB_RECURSE libvast_headers "${CMAKE_CURRENT_SOURCE_DIR}/vast/*.hpp")
 
 set(libvast_sources
-  src/address.cpp
   src/attribute.cpp
   src/banner.cpp
   src/base.cpp
@@ -64,7 +63,6 @@ set(libvast_sources
   src/port.cpp
   src/schema.cpp
   src/segment_store.cpp
-  src/subnet.cpp
   src/system/accountant.cpp
   src/system/application.cpp
   src/system/archive.cpp
@@ -212,7 +210,6 @@ include_directories(
   ${CMAKE_CURRENT_BINARY_DIR}/test)
 
 set(tests
-  test/address.cpp
   test/batch.cpp
   test/binner.cpp
   test/bitmap.cpp
@@ -262,7 +259,6 @@ set(tests
   test/span.cpp
   test/stack.cpp
   test/string.cpp
-  test/subnet.cpp
   test/system/archive.cpp
   test/system/consensus.cpp
   test/system/datagram_source.cpp

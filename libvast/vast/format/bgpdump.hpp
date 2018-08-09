@@ -42,7 +42,7 @@ struct bgpdump_parser : parser<bgpdump_parser> {
       = "BGP4MP|" >> time >> '|' >> str >> '|' >> addr >> '|' >> u64 >> '|';
     timestamp ts;
     std::string update;
-    vast::address source_ip;
+    caf::ip_address source_ip;
     count source_as;
     auto tuple = std::tie(ts, update, source_ip, source_as);
     if (!head(f, l, tuple))
@@ -58,11 +58,11 @@ struct bgpdump_parser : parser<bgpdump_parser> {
         net >> '|' >> (num % ' ') >> -(" {" >> u64 >> '}') >> '|'
             >> str >> '|' >> addr >> '|' >> u64 >> '|' >> u64 >> '|'
             >> -str >> '|' >> -str >> '|' >> -str;
-      subnet sn;
+      caf::ip_subnet sn;
       std::vector<data> as_path;
       optional<count> origin_as;
       std::string origin;
-      vast::address nexthop;
+      caf::ip_address nexthop;
       count local_pref;
       count med;
       optional<std::string> community;
@@ -85,7 +85,7 @@ struct bgpdump_parser : parser<bgpdump_parser> {
       e = event{{std::move(v), update == "A" ? announce_type : route_type}};
       e.timestamp(ts);
     } else if (update == "W") {
-      subnet sn;
+      caf::ip_subnet sn;
       if (!net(f, l, sn))
         return {};
       v.emplace_back(sn);

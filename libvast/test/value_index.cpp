@@ -15,10 +15,10 @@
 #include "vast/load.hpp"
 #include "vast/save.hpp"
 
+#include "vast/concept/parseable/caf/ip_address.hpp"
+#include "vast/concept/parseable/caf/ip_subnet.hpp"
 #include "vast/concept/parseable/to.hpp"
-#include "vast/concept/parseable/vast/address.hpp"
 #include "vast/concept/parseable/vast/data.hpp"
-#include "vast/concept/parseable/vast/subnet.hpp"
 #include "vast/concept/parseable/vast/time.hpp"
 #include "vast/concept/printable/to_string.hpp"
 #include "vast/concept/printable/vast/bitmap.hpp"
@@ -259,67 +259,68 @@ TEST(string) {
 TEST(address) {
   address_index idx;
   MESSAGE("append");
-  auto x = *to<address>("192.168.0.1");
+  auto x = *to<caf::ip_address>("192.168.0.1");
   REQUIRE(idx.append(make_data_view(x)));
-  x = *to<address>("192.168.0.2");
+  x = *to<caf::ip_address>("192.168.0.2");
   REQUIRE(idx.append(make_data_view(x)));
-  x = *to<address>("192.168.0.3");
+  x = *to<caf::ip_address>("192.168.0.3");
   REQUIRE(idx.append(make_data_view(x)));
-  x = *to<address>("192.168.0.1");
+  x = *to<caf::ip_address>("192.168.0.1");
   REQUIRE(idx.append(make_data_view(x)));
-  x = *to<address>("192.168.0.1");
+  x = *to<caf::ip_address>("192.168.0.1");
   REQUIRE(idx.append(make_data_view(x)));
-  x = *to<address>("192.168.0.2");
+  x = *to<caf::ip_address>("192.168.0.2");
   REQUIRE(idx.append(make_data_view(x)));
   MESSAGE("address equality");
-  x = *to<address>("192.168.0.1");
+  x = *to<caf::ip_address>("192.168.0.1");
   auto bm = idx.lookup(equal, make_data_view(x));
   REQUIRE(bm);
   CHECK(to_string(*bm) == "100110");
   bm = idx.lookup(not_equal, make_data_view(x));
   CHECK(to_string(*bm) == "011001");
-  x = *to<address>("192.168.0.5");
+  x = *to<caf::ip_address>("192.168.0.5");
   CHECK(to_string(*idx.lookup(equal, make_data_view(x))) == "000000");
   MESSAGE("invalid operator");
   CHECK(!idx.lookup(match, make_data_view(x)));
   MESSAGE("prefix membership");
-  x = *to<address>("192.168.0.128");
+  x = *to<caf::ip_address>("192.168.0.128");
   CHECK(idx.append(make_data_view(x)));
-  x = *to<address>("192.168.0.130");
+  x = *to<caf::ip_address>("192.168.0.130");
   CHECK(idx.append(make_data_view(x)));
-  x = *to<address>("192.168.0.240");
+  x = *to<caf::ip_address>("192.168.0.240");
   CHECK(idx.append(make_data_view(x)));
-  x = *to<address>("192.168.0.127");
+  x = *to<caf::ip_address>("192.168.0.127");
   CHECK(idx.append(make_data_view(x)));
-  x = *to<address>("192.168.0.33");
+  x = *to<caf::ip_address>("192.168.0.33");
   CHECK(idx.append(make_data_view(x)));
-  auto y = subnet{*to<address>("192.168.0.128"), 25};
+  auto y = caf::ip_subnet{*to<caf::ip_address>("192.168.0.128"), 25};
   bm = idx.lookup(in, make_data_view(y));
   REQUIRE(bm);
-  CHECK(to_string(*bm) == "00000011100");
+  CHECK_EQUAL(to_string(*bm), "00000011100");
   bm = idx.lookup(not_in, make_data_view(y));
   REQUIRE(bm);
-  CHECK(to_string(*bm) == "11111100011");
-  y = {*to<address>("192.168.0.0"), 24};
+  CHECK_EQUAL(to_string(*bm), "11111100011");
+  y = {*to<caf::ip_address>("192.168.0.0"), 24};
   bm = idx.lookup(in, make_data_view(y));
   REQUIRE(bm);
-  CHECK(to_string(*bm) == "11111111111");
-  y = {*to<address>("192.168.0.0"), 20};
+  CHECK_EQUAL(to_string(*bm), "11111111111");
+  y = {*to<caf::ip_address>("192.168.0.0"), 20};
   bm = idx.lookup(in, make_data_view(y));
   REQUIRE(bm);
-  CHECK(to_string(*bm) == "11111111111");
-  y = {*to<address>("192.168.0.64"), 26};
+  CHECK_EQUAL(to_string(*bm), "11111111111");
+  y = {*to<caf::ip_address>("192.168.0.64"), 26};
   bm = idx.lookup(not_in, make_data_view(y));
   REQUIRE(bm);
-  CHECK(to_string(*bm) == "11111111101");
-  auto xs = vector{*to<address>("192.168.0.1"), *to<address>("192.168.0.2")};
+  CHECK_EQUAL(to_string(*bm), "11111111101");
+  auto xs = vector{*to<caf::ip_address>("192.168.0.1"),
+                   *to<caf::ip_address>("192.168.0.2")};
   auto multi = idx.lookup(in, make_data_view(xs));
   REQUIRE(multi);
   CHECK_EQUAL(to_string(*multi), "11011100000");
   MESSAGE("gaps");
-  x = *to<address>("192.168.0.2");
+  x = *to<caf::ip_address>("192.168.0.2");
   CHECK(idx.append(make_data_view(x), 42));
-  x = *to<address>("192.168.0.2");
+  x = *to<caf::ip_address>("192.168.0.2");
   auto str = "01000100000"s + std::string('0', 42) + '1';
   CHECK_EQUAL(idx.lookup(equal, make_data_view(x)), str);
   MESSAGE("serialization");
@@ -332,9 +333,9 @@ TEST(address) {
 
 TEST(subnet) {
   subnet_index idx;
-  auto s0 = *to<subnet>("192.168.0.0/24");
-  auto s1 = *to<subnet>("192.168.1.0/24");
-  auto s2 = *to<subnet>("::/40");
+  auto s0 = *to<caf::ip_subnet>("192.168.0.0/24");
+  auto s1 = *to<caf::ip_subnet>("192.168.1.0/24");
+  auto s2 = *to<caf::ip_subnet>("::/40");
   MESSAGE("append");
   REQUIRE(idx.append(make_data_view(s0)));
   REQUIRE(idx.append(make_data_view(s1)));
@@ -350,11 +351,11 @@ TEST(subnet) {
   REQUIRE(bm);
   CHECK_EQUAL(to_string(*bm), "101111");
   MESSAGE("subset lookup (in)");
-  auto x = *to<subnet>("192.168.0.0/23");
+  auto x = *to<caf::ip_subnet>("192.168.0.0/23");
   bm = idx.lookup(in, make_data_view(x));
   REQUIRE(bm);
   CHECK_EQUAL(to_string(*bm), "111100");
-  x = *to<subnet>("192.168.0.0/25");
+  x = *to<caf::ip_subnet>("192.168.0.0/25");
   bm = idx.lookup(in, make_data_view(x));
   REQUIRE(bm);
   CHECK_EQUAL(to_string(*bm), "000000");
@@ -362,15 +363,15 @@ TEST(subnet) {
   bm = idx.lookup(ni, make_data_view(s0));
   REQUIRE(bm);
   CHECK_EQUAL(to_string(*bm), "101100");
-  x = *to<subnet>("192.168.1.128/25");
+  x = *to<caf::ip_subnet>("192.168.1.128/25");
   bm = idx.lookup(ni, make_data_view(x));
   REQUIRE(bm);
   CHECK_EQUAL(to_string(*bm), "010000");
-  x = *to<subnet>("192.168.0.254/32");
+  x = *to<caf::ip_subnet>("192.168.0.254/32");
   bm = idx.lookup(ni, make_data_view(x));
   REQUIRE(bm);
   CHECK_EQUAL(to_string(*bm), "101100");
-  x = *to<subnet>("192.0.0.0/8");
+  x = *to<caf::ip_subnet>("192.0.0.0/8");
   bm = idx.lookup(ni, make_data_view(x));
   REQUIRE(bm);
   CHECK_EQUAL(to_string(*bm), "000000");
@@ -536,7 +537,7 @@ FIXTURE_SCOPE(bro_conn_log_value_index_tests, fixtures::events)
 auto orig_h(const event& x) {
   auto& log_entry = caf::get<vector>(x.data());
   auto& conn_id = caf::get<vector>(log_entry[2]);
-  return make_view(caf::get<address>(conn_id[0]));
+  return make_view(caf::get<caf::ip_address>(conn_id[0]));
 }
 
 // This test uncovered a regression that ocurred when computing the rank of a
@@ -596,7 +597,7 @@ TEST(regression - manual address bitmap index from bitmaps) {
     }
   }
   MESSAGE("querying 169.254.225.22");
-  auto x = *to<address>("169.254.225.22");
+  auto x = *to<caf::ip_address>("169.254.225.22");
   auto result = ewah_bitmap{idx[0].size(), true};
   REQUIRE_EQUAL(result.size(), 6464u);
   for (auto i = 0u; i < 4; ++i) {
@@ -623,7 +624,7 @@ TEST(regression - manual address bitmap index from 4 byte indexes) {
     }
   }
   MESSAGE("querying 169.254.225.22");
-  auto x = *to<address>("169.254.225.22");
+  auto x = *to<caf::ip_address>("169.254.225.22");
   auto result = ewah_bitmap{idx[0].size(), true};
   REQUIRE_EQUAL(result.size(), 6464u);
   for (auto i = 0u; i < 4; ++i) {

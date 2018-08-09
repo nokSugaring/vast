@@ -151,7 +151,7 @@ TEST(schema: aliases) {
   CHECK(parsers::schema(std::string{str}, sch));
   auto foo = sch.find("foo");
   REQUIRE(foo);
-  CHECK(holds_alternative<address_type>(*foo));
+  CHECK(holds_alternative<ip_address_type>(*foo));
   CHECK(sch.find("bar"));
   CHECK(sch.find("baz"));
   CHECK(sch.find("x"));

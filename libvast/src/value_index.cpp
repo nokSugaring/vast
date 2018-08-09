@@ -98,10 +98,10 @@ std::unique_ptr<value_index> value_index::make(const type& t) {
     result_type operator()(const pattern_type&) const {
       return nullptr;
     }
-    result_type operator()(const address_type&) const {
+    result_type operator()(const ip_address_type&) const {
       return std::make_unique<address_index>();
     }
-    result_type operator()(const subnet_type&) const {
+    result_type operator()(const ip_subnet_type&) const {
       return std::make_unique<subnet_index>();
     }
     result_type operator()(const port_type&) const {
@@ -293,7 +293,7 @@ void address_index::init() {
 
 bool address_index::append_impl(data_view x, id pos) {
   init();
-  auto addr = caf::get_if<view<address>>(&x);
+  auto addr = caf::get_if<view<caf::ip_address>>(&x);
   if (!addr)
     return false;
   auto& bytes = addr->data();
@@ -302,7 +302,7 @@ bool address_index::append_impl(data_view x, id pos) {
     bytes_[i].append(bytes[i]);
   }
   v4_.skip(pos - v4_.size());
-  v4_.append(addr->is_v4());
+  v4_.append(addr->embeds_v4());
   return true;
 }
 
@@ -312,11 +312,11 @@ address_index::lookup_impl(relational_operator op, data_view d) const {
     [&](auto x) -> expected<ids> {
       return make_error(ec::type_clash, materialize(x));
     },
-    [&](view<address> x) -> expected<ids> {
+    [&](view<caf::ip_address> x) -> expected<ids> {
       if (!(op == equal || op == not_equal))
         return make_error(ec::unsupported_operator, op);
-      auto result = x.is_v4() ? v4_.coder().storage() : ids{offset(), true};
-      for (auto i = x.is_v4() ? 12u : 0u; i < 16; ++i) {
+      auto result = x.embeds_v4() ? v4_.coder().storage() : ids{offset(), true};
+      for (auto i = x.embeds_v4() ? 12u : 0u; i < 16; ++i) {
         auto bm = bytes_[i].lookup(equal, x.data()[i]);
         result &= bm;
         if (all<0>(result))
@@ -326,18 +326,18 @@ address_index::lookup_impl(relational_operator op, data_view d) const {
         result.flip();
       return result;
     },
-    [&](view<subnet> x) -> expected<ids> {
+    [&](view<caf::ip_subnet> x) -> expected<ids> {
       if (!(op == in || op == not_in))
         return make_error(ec::unsupported_operator, op);
-      auto topk = x.length();
+      auto topk = x.prefix_length();
       if (topk == 0)
         return make_error(ec::unspecified, "invalid IP subnet length: ", topk);
-      auto is_v4 = x.network().is_v4();
+      auto is_v4 = x.network_address().embeds_v4();
       if ((is_v4 ? topk + 96 : topk) == 128)
         // Asking for /32 or /128 membership is equivalent to an equality lookup.
-        return lookup_impl(op == in ? equal : not_equal, x.network());
+        return lookup_impl(op == in ? equal : not_equal, x.network_address());
       auto result = is_v4 ? v4_.coder().storage() : ids{offset(), true};
-      auto& bytes = x.network().data();
+      auto& bytes = x.network_address().data();
       size_t i = is_v4 ? 12 : 0;
       for ( ; i < 16 && topk >= 8; ++i, topk -= 8)
         result &= bytes_[i].lookup(equal, bytes[i]);
@@ -363,11 +363,11 @@ void subnet_index::init() {
 }
 
 bool subnet_index::append_impl(data_view x, id pos) {
-  if (auto sn = caf::get_if<view<subnet>>(&x)) {
+  if (auto sn = caf::get_if<view<caf::ip_subnet>>(&x)) {
     init();
     length_.skip(pos - length_.size());
-    length_.append(sn->length());
-    return static_cast<bool>(network_.append(sn->network(), pos));
+    length_.append(sn->prefix_length());
+    return static_cast<bool>(network_.append(sn->network_address(), pos));
   }
   return false;
 }
@@ -378,16 +378,16 @@ subnet_index::lookup_impl(relational_operator op, data_view d) const {
     [&](auto x) -> expected<ids> {
       return make_error(ec::type_clash, materialize(x));
     },
-    [&](view<subnet> x) -> expected<ids> {
+    [&](view<caf::ip_subnet> x) -> expected<ids> {
       switch (op) {
         default:
           return make_error(ec::unsupported_operator, op);
         case equal:
         case not_equal: {
-          auto result = network_.lookup(equal, x.network());
+          auto result = network_.lookup(equal, x.network_address());
           if (!result)
             return result;
-          auto n = length_.lookup(equal, x.length());
+          auto n = length_.lookup(equal, x.prefix_length());
           *result &= n;
           if (op == not_equal)
             result->flip();
@@ -401,7 +401,7 @@ subnet_index::lookup_impl(relational_operator op, data_view d) const {
           auto result = network_.lookup(in, x);
           if (!result)
             return result;
-          *result &= length_.lookup(greater_equal, x.length());
+          *result &= length_.lookup(greater_equal, x.prefix_length());
           if (op == not_in)
             result->flip();
           return result;
@@ -412,8 +412,9 @@ subnet_index::lookup_impl(relational_operator op, data_view d) const {
           // subset relationship such that `U ni x` translates to U ⊇ x, i.e.,
           // the lookup returns all subnets in U that include x.
           ids result;
-          for (auto i = uint8_t{1}; i <= x.length(); ++i) {
-            auto xs = network_.lookup(in, subnet{x.network(), i});
+          for (uint8_t i = 1; i <= x.prefix_length(); ++i) {
+            auto xs = network_.lookup(in,
+                                      caf::ip_subnet{x.network_address(), i});
             if (!xs)
               return xs;
             *xs &= length_.lookup(equal, i);

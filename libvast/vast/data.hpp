@@ -20,14 +20,14 @@
 
 #include <caf/default_sum_type_access.hpp>
 #include <caf/detail/type_list.hpp>
+#include <caf/ip_address.hpp>
+#include <caf/ip_subnet.hpp>
 #include <caf/none.hpp>
 #include <caf/optional.hpp>
 #include <caf/variant.hpp>
 
 #include "vast/aliases.hpp"
-#include "vast/address.hpp"
 #include "vast/pattern.hpp"
-#include "vast/subnet.hpp"
 #include "vast/port.hpp"
 #include "vast/offset.hpp"
 #include "vast/time.hpp"
@@ -66,8 +66,8 @@ using to_data_type = std::conditional_t<
             || std::is_same_v<T, timespan>
             || std::is_same_v<T, timestamp>
             || std::is_same_v<T, pattern>
-            || std::is_same_v<T, address>
-            || std::is_same_v<T, subnet>
+            || std::is_same_v<T, caf::ip_address>
+            || std::is_same_v<T, caf::ip_subnet>
             || std::is_same_v<T, port>
             || std::is_same_v<T, enumeration>
             || std::is_same_v<T, vector>
@@ -103,8 +103,8 @@ public:
     timestamp,
     std::string,
     pattern,
-    address,
-    subnet,
+    caf::ip_address,
+    caf::ip_subnet,
     port,
     enumeration,
     vector,
@@ -192,8 +192,6 @@ VAST_DATA_TRAIT(real);
 VAST_DATA_TRAIT(timespan);
 VAST_DATA_TRAIT(timestamp);
 VAST_DATA_TRAIT(pattern);
-VAST_DATA_TRAIT(address);
-VAST_DATA_TRAIT(subnet);
 VAST_DATA_TRAIT(port);
 VAST_DATA_TRAIT(enumeration);
 VAST_DATA_TRAIT(vector);
@@ -201,6 +199,16 @@ VAST_DATA_TRAIT(set);
 VAST_DATA_TRAIT(map);
 
 #undef VAST_DATA_TRAIT
+
+template <>
+struct data_traits<caf::ip_address> {
+  using type = ip_address_type;
+};
+
+template <>
+struct data_traits<caf::ip_subnet> {
+  using type = ip_subnet_type;
+};
 
 template <>
 struct data_traits<caf::none_t> {

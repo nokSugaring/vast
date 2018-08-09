@@ -19,7 +19,10 @@
 #include <type_traits>
 
 #include <caf/intrusive_ptr.hpp>
+#include <caf/ip_address.hpp>
+#include <caf/ip_subnet.hpp>
 #include <caf/make_counted.hpp>
+#include <caf/none.hpp>
 #include <caf/ref_counted.hpp>
 #include <caf/variant.hpp>
 
@@ -30,6 +33,7 @@
 #include "vast/detail/assert.hpp"
 #include "vast/detail/iterator.hpp"
 #include "vast/detail/operators.hpp"
+#include "vast/detail/pp.hpp"
 #include "vast/detail/type_traits.hpp"
 
 namespace vast {
@@ -52,23 +56,34 @@ using view = typename view_trait<T>::type;
   }
 
 VAST_VIEW_TRAIT(boolean);
-VAST_VIEW_TRAIT(integer);
+VAST_VIEW_TRAIT(caf::ip_address);
+VAST_VIEW_TRAIT(caf::ip_subnet);
+VAST_VIEW_TRAIT(caf::none_t);
 VAST_VIEW_TRAIT(count);
+VAST_VIEW_TRAIT(integer);
+VAST_VIEW_TRAIT(port);
 VAST_VIEW_TRAIT(real);
 VAST_VIEW_TRAIT(timespan);
 VAST_VIEW_TRAIT(timestamp);
-VAST_VIEW_TRAIT(port);
-VAST_VIEW_TRAIT(address);
-VAST_VIEW_TRAIT(subnet);
 
+/*
 #undef VAST_VIEW_TRAIT
 
-/// @relates view_trait
-template <>
-struct view_trait<caf::none_t> {
-  using type = caf::none_t;
-};
+#define VAST_VIEW_CAF_TRAIT(type_name)                                         \
+  inline auto materialize(VAST_PP_PASTE3(caf, ::, type_name) x) {              \
+    return x;                                                                  \
+  }                                                                            \
+  template <>                                                                  \
+  struct view_trait<VAST_PP_PASTE3(caf, ::, type_name)> {                      \
+    using type = VAST_PP_PASTE3(caf, ::, type_name);                           \
+  }
 
+VAST_VIEW_CAF_TRAIT(ip_address);
+VAST_VIEW_CAF_TRAIT(ip_subnet);
+VAST_VIEW_CAF_TRAIT(none_t);
+
+#undef VAST_VIEW_CAF_TRAIT
+*/
 
 /// @relates view_trait
 template <>
@@ -151,8 +166,8 @@ using data_view = caf::variant<
   view<timestamp>,
   view<std::string>,
   view<pattern>,
-  view<address>,
-  view<subnet>,
+  view<caf::ip_address>,
+  view<caf::ip_subnet>,
   view<port>,
   view<vector>,
   view<set>,
@@ -380,7 +395,8 @@ template <class T>
 view<T> make_view(const T& x) {
   constexpr auto directly_constructible
     = detail::is_any_v<T, caf::none_t, boolean, integer, count, real, timespan,
-                       timestamp, std::string, pattern, address, subnet, port>;
+                       timestamp, std::string, pattern, caf::ip_address,
+                       caf::ip_subnet, port>;
   if constexpr (directly_constructible) {
     return x;
   } else if constexpr (std::is_same_v<T, vector>) {
@@ -413,10 +429,6 @@ data_view make_data_view(const T& x) {
 }
 
 // -- materialization ----------------------------------------------------------
-
-constexpr auto materialize(caf::none_t x) {
-  return x;
-}
 
 std::string materialize(std::string_view x);
 

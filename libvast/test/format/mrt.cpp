@@ -1,14 +1,16 @@
-#include "vast/filesystem.hpp"
-
-#include "vast/detail/make_io_stream.hpp"
-
-#include "vast/concept/parseable/to.hpp"
+#define SUITE format
 
 #include "vast/format/mrt.hpp"
 
-#define SUITE format
 #include "test.hpp"
 #include "data.hpp"
+
+#include <caf/ip_address.hpp>
+#include <caf/ip_subnet.hpp>
+
+#include "vast/concept/parseable/to.hpp"
+#include "vast/detail/make_io_stream.hpp"
+#include "vast/filesystem.hpp"
 
 using namespace vast;
 
@@ -31,26 +33,26 @@ TEST(MRT) {
   CHECK_EQUAL(events[2].type().name(), "mrt::bgp4mp::update::announcement");
   auto record = caf::get_if<vector>(&events[2].data());
   REQUIRE(record);
-  auto addr = caf::get_if<address>(&record->at(0));
-  CHECK_EQUAL(*addr, *to<address>("12.0.1.63"));
+  auto addr = caf::get_if<caf::ip_address>(&record->at(0));
+  CHECK_EQUAL(*addr, *to<caf::ip_address>("12.0.1.63"));
   CHECK_EQUAL(record->at(1), count{7018});
-  auto subn = caf::get_if<subnet>(&record->at(2));
-  CHECK_EQUAL(*subn, *to<subnet>("200.29.24.0/24"));
+  auto subn = caf::get_if<caf::ip_subnet>(&record->at(2));
+  CHECK_EQUAL(*subn, *to<caf::ip_subnet>("200.29.24.0/24"));
   // Event 17
   CHECK_EQUAL(events[17].type().name(), "mrt::bgp4mp::update::withdrawn");
   record = caf::get_if<vector>(&events[17].data());
   REQUIRE(record);
-  addr = caf::get_if<address>(&record->at(0));
-  CHECK_EQUAL(*addr, *to<address>("12.0.1.63"));
+  addr = caf::get_if<caf::ip_address>(&record->at(0));
+  CHECK_EQUAL(*addr, *to<caf::ip_address>("12.0.1.63"));
   CHECK_EQUAL(record->at(1), count{7018});
-  subn = caf::get_if<subnet>(&record->at(2));
-  CHECK_EQUAL(*subn, *to<subnet>("200.29.24.0/24"));
+  subn = caf::get_if<caf::ip_subnet>(&record->at(2));
+  CHECK_EQUAL(*subn, *to<caf::ip_subnet>("200.29.24.0/24"));
   // Event 73
   CHECK_EQUAL(events[73].type().name(), "mrt::bgp4mp::state_change");
   record = caf::get_if<vector>(&events[73].data());
   REQUIRE(record);
-  addr = caf::get_if<address>(&record->at(0));
-  CHECK_EQUAL(*addr, *to<address>("111.91.233.1"));
+  addr = caf::get_if<caf::ip_address>(&record->at(0));
+  CHECK_EQUAL(*addr, *to<caf::ip_address>("111.91.233.1"));
   CHECK_EQUAL(record->at(1), count{45896});
   CHECK_EQUAL(record->at(2), count{3});
   CHECK_EQUAL(record->at(3), count{2});
@@ -58,10 +60,10 @@ TEST(MRT) {
   CHECK_EQUAL(events[26478].type().name(), "mrt::bgp4mp::update::announcement");
   record = caf::get_if<vector>(&events[26478].data());
   REQUIRE(record);
-  addr = caf::get_if<address>(&record->at(0));
-  CHECK_EQUAL(*addr, *to<address>("2a01:2a8::3"));
-  subn = caf::get_if<subnet>(&record->at(2));
-  CHECK_EQUAL(*subn, *to<subnet>("2a00:bdc0:e003::/48"));
+  addr = caf::get_if<caf::ip_address>(&record->at(0));
+  CHECK_EQUAL(*addr, *to<caf::ip_address>("2a01:2a8::3"));
+  subn = caf::get_if<caf::ip_subnet>(&record->at(2));
+  CHECK_EQUAL(*subn, *to<caf::ip_subnet>("2a00:bdc0:e003::/48"));
   auto as_path = caf::get_if<vector>(&record->at(3));
   CHECK_EQUAL(as_path->size(), 4u);
   CHECK_EQUAL(as_path->at(0), count{1836});

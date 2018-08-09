@@ -11,11 +11,16 @@
  * contained in the LICENSE file.                                             *
  ******************************************************************************/
 
-#include "vast/concept/parseable/to.hpp"
-#include "vast/concept/parseable/vast/data.hpp"
-
 #define SUITE parseable
+
+#include "vast/concept/parseable/to.hpp"
+
 #include "test.hpp"
+
+#include <caf/ip_address.hpp>
+#include <caf/ip_subnet.hpp>
+
+#include "vast/concept/parseable/vast/data.hpp"
 
 using namespace vast;
 using namespace std::string_literals;
@@ -74,7 +79,7 @@ TEST(data) {
   l = str.end();
   CHECK(p(f, l, d));
   CHECK(f == l);
-  CHECK(d == *to<address>("10.0.0.1"));
+  CHECK(d == *to<caf::ip_address>("10.0.0.1"));
 
   MESSAGE("port");
   str = "22/tcp"s;

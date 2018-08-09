@@ -3,23 +3,24 @@
 #include <iostream>
 #include <queue>
 
+#include <caf/ip_address.hpp>
+#include <caf/ipv4_address.hpp>
 #include <caf/none.hpp>
 #include <caf/variant.hpp>
 
-#include "vast/address.hpp"
+#include "vast/detail/byte_swap.hpp"
 #include "vast/error.hpp"
 #include "vast/event.hpp"
 #include "vast/expected.hpp"
 #include "vast/logger.hpp"
 #include "vast/schema.hpp"
-#include "vast/subnet.hpp"
 #include "vast/time.hpp"
 #include "vast/type.hpp"
 
+#include "vast/concept/parseable/caf/ip_address.hpp"
 #include "vast/concept/parseable/core.hpp"
 #include "vast/concept/parseable/numeric.hpp"
 #include "vast/concept/parseable/string.hpp"
-#include "vast/concept/parseable/vast/address.hpp"
 #include "vast/concept/parseable/vast/data.hpp"
 
 namespace vast {
@@ -36,9 +37,13 @@ namespace detail {
 template <class F>
 auto make_ip_v4_v6_parser(F f) {
   using namespace parsers;
-  auto v4 = [](uint32_t a) { return address::v4(&a); };
+  auto v4 = [](uint32_t a) {
+    caf::ipv4_address res;
+    res.bits(to_host_order(a));
+    return caf::ip_address{res};
+  };
   auto v6 = [](std::array<uint8_t, 16> a) {
-    return address::v6(a.data(), address::network);
+    return caf::ip_address(a);
   };
   return (b32be ->* v4).when(f) | (bytes<16> ->* v6);
 }
@@ -148,15 +153,15 @@ struct open {
 struct attributes {
   std::string origin;
   std::vector<uint32_t> as_path;
-  address next_hop;
+  caf::ip_address next_hop;
   uint32_t multi_exit_disc;
   uint32_t local_pref;
   bool atomic_aggregate = false;
   uint32_t aggregator_as;
-  address aggregator_ip;
+  caf::ip_address aggregator_ip;
   std::vector<uint64_t> communities;
-  std::vector<subnet> mp_reach_nlri;
-  std::vector<subnet> mp_unreach_nlri;
+  std::vector<caf::ip_subnet> mp_reach_nlri;
+  std::vector<caf::ip_subnet> mp_unreach_nlri;
 };
 
 /// An UPDATE message. This message is used to advertise feasible routes that
@@ -182,10 +187,10 @@ struct attributes {
 /// @relates types
 struct update {
   uint16_t withdrawn_routes_length;
-  std::vector<subnet> withdrawn_routes;
+  std::vector<caf::ip_subnet> withdrawn_routes;
   uint16_t total_path_attribute_length;
   attributes path_attributes;
-  std::vector<subnet> network_layer_reachability_information;
+  std::vector<caf::ip_subnet> network_layer_reachability_information;
 };
 
 /// A NOTIFICATION message. In addition to the fixed-size BGP header, the
@@ -219,15 +224,15 @@ struct message {
 // bytes.
 template <class N>
 struct prefix_parser : parser<prefix_parser<N>> {
-  using attribute = std::vector<subnet>;
+  using attribute = std::vector<caf::ip_subnet>;
 
-  prefix_parser(const N& n, address::family f) : bytes{n}, family{f} {
+  prefix_parser(const N& n, bool is_v4) : bytes{n}, read_v4(is_v4) {
     // nop
   }
 
   template <class Iterator>
-  bool parse(Iterator& f, const Iterator& l, std::vector<subnet>& xs) const {
-    for (auto n = N{0}; n < bytes;) {
+  bool parse(Iterator& f, const Iterator& l, attribute& xs) const {
+    for (N n = 0; n < bytes;) {
       uint8_t prefix_length;
       uint8_t prefix_bytes;
       auto pfx_len = parsers::byte ->* [&] {
@@ -235,12 +240,19 @@ struct prefix_parser : parser<prefix_parser<N>> {
         if (prefix_length % 8 != 0)
           ++prefix_bytes;
       };
-      std::array<uint8_t, 16> addr_bytes;
+      union {
+        std::array<uint8_t, 16> addr_bytes;
+        std::array<uint32_t, 4> addr_chunks;
+      } u;
       auto addr = parsers::nbytes<uint8_t>(prefix_bytes) ->* [&] {
-        xs.emplace_back(address{addr_bytes.data(), family, address::network},
-                        prefix_length);
+        caf::ip_address tmp;
+        if (read_v4)
+          tmp = caf::ip_address{caf::ipv4_address::from_bits(u.addr_chunks[0])};
+        else
+          tmp = caf::ip_address{u.addr_bytes};
+        xs.emplace_back(tmp, prefix_length);
       };
-      if (!(pfx_len >> addr)(f, l, prefix_length, addr_bytes))
+      if (!(pfx_len >> addr)(f, l, prefix_length, u.addr_bytes))
         return false;
       n += sizeof(uint8_t) + prefix_bytes;
     }
@@ -248,7 +260,7 @@ struct prefix_parser : parser<prefix_parser<N>> {
   }
 
   const N& bytes;
-  address::family family;
+  bool read_v4;
 };
 
 /// @relates attributes
@@ -284,6 +296,10 @@ struct attributes_parser : parser<attributes_parser<TypeCode14Policy>> {
       // can use the combinator style to chain the parser together, as opposed
       // to dispatching manually.
       auto t = f;
+      auto u32_to_addr = [](uint32_t x) {
+        auto res = caf::ipv4_address::from_bits(detail::to_host_order(x));
+        return caf::ip_address{res};
+      };
       switch (type_code) {
         case 1: {
           auto p = parsers::byte ->* [](uint8_t x) {
@@ -317,7 +333,7 @@ struct attributes_parser : parser<attributes_parser<TypeCode14Policy>> {
           break;
         }
         case 3: {
-          auto p = b32be ->* [](uint32_t x) { return address::v4(&x); };
+          auto p = b32be ->* u32_to_addr;
           if (!p(t, l, x.next_hop))
             return false;
           break;
@@ -337,7 +353,7 @@ struct attributes_parser : parser<attributes_parser<TypeCode14Policy>> {
           auto as16 = b16be ->* [](uint16_t x) { return uint32_t{x}; };
           auto as32 = b32be;
           auto as = as32.when([&] { return as4; }) | as16;
-          auto ipv4 = b32be ->* [](uint32_t x) { return address::v4(&x); };
+          auto ipv4 = b32be ->* u32_to_addr;
           auto p = as >> ipv4;
           if (!p(t, l, x.aggregator_as, x.aggregator_ip))
             return false;
@@ -389,8 +405,8 @@ struct attributes_parser : parser<attributes_parser<TypeCode14Policy>> {
             // FIXME: Where does the magic constant '5' come from?
             auto mp_nlri_length = attr_length - (5 + next_hop_addr_len);
             auto field_len = static_cast<size_t>(mp_nlri_length);
-            auto family = addr_family_id == 1 ? address::ipv4 : address::ipv6;
-            if (!prefix_parser{field_len, family}(t, l, x.mp_reach_nlri))
+            auto is_v4 = addr_family_id == 1;
+            if (!prefix_parser{field_len, is_v4}(t, l, x.mp_reach_nlri))
               return false;
           } else {
             static_assert(
@@ -405,12 +421,12 @@ struct attributes_parser : parser<attributes_parser<TypeCode14Policy>> {
           auto p = b16be >> byte;
           if (!p(t, l, addr_family_id, subsequent_addr_family_id))
             return false;
-          auto family = addr_family_id == 1 ? address::ipv4 : address::ipv6;
           // FIXME: where does the magic number '3' come from?
           // sizeof(addr_family_id) + sizeof(subsequent_addr_family_id)?
           auto mp_nlri_length = attr_length - 3;
           auto field_len = static_cast<size_t>(mp_nlri_length);
-          if (!prefix_parser{field_len, family}(t, l, x.mp_unreach_nlri))
+            auto is_v4 = addr_family_id == 1;
+          if (!prefix_parser{field_len, is_v4}(t, l, x.mp_unreach_nlri))
             return false;
           break;
         }
@@ -473,7 +489,7 @@ struct update_parser : parser<update_parser> {
   template <class Iterator>
   bool parse(Iterator& f, const Iterator& l, update& x) const {
     using namespace parsers;
-    auto pfxs = prefix_parser{x.withdrawn_routes_length, address::ipv4};
+    auto pfxs = prefix_parser{x.withdrawn_routes_length, true};
     auto afi4 = false;
     auto attrs = attributes_parser<policy::bgp>{x.total_path_attribute_length,
       as4, afi4};
@@ -483,7 +499,7 @@ struct update_parser : parser<update_parser> {
       // FIXME: where does the constant '23' come from?
       auto nlri_length = message_length_ - 23 - x.total_path_attribute_length
                          - x.withdrawn_routes_length;
-      auto p = prefix_parser{nlri_length, address::ipv4};
+      auto p = prefix_parser{nlri_length, true};
       return p(f, l, x.network_layer_reachability_information);
     });
     auto p = b16be >> pfxs >> b16be >> attrs >> nlri;
@@ -631,7 +647,7 @@ struct rib_entry;
 struct rib_entry_header {
   uint32_t sequence_number;
   uint8_t prefix_length;
-  std::vector<subnet> prefix;
+  std::vector<caf::ip_subnet> prefix;
   uint16_t entry_count;
   std::vector<rib_entry> rib_entries;
 };
@@ -752,7 +768,7 @@ struct peer_index_table {
 struct peer_entry {
   uint8_t peer_type;
   uint32_t peer_bgp_id;
-  address peer_ip_address;
+  caf::ip_address peer_ip_address;
   uint32_t peer_as;
 };
 
@@ -805,8 +821,8 @@ struct state_change {
   uint16_t local_as_number;
   uint16_t interface_index;
   uint16_t address_family;
-  address peer_ip_address;
-  address local_ip_address;
+  caf::ip_address peer_ip_address;
+  caf::ip_address local_ip_address;
   uint16_t old_state;
   uint16_t new_state;
 };
@@ -839,8 +855,8 @@ struct message {
   uint16_t local_as_number;
   uint16_t interface_index;
   uint16_t address_family;
-  address peer_ip_address;
-  address local_ip_address;
+  caf::ip_address peer_ip_address;
+  caf::ip_address local_ip_address;
   bgp::message message;
 };
 
@@ -870,8 +886,8 @@ struct message_as4 {
   uint32_t local_as_number;
   uint16_t interface_index;
   uint16_t address_family;
-  address peer_ip_address;
-  address local_ip_address;
+  caf::ip_address peer_ip_address;
+  caf::ip_address local_ip_address;
   bgp::message message;
 };
 
@@ -904,8 +920,8 @@ struct state_change_as4 {
   uint32_t local_as_number;
   uint16_t interface_index;
   uint16_t address_family;
-  address peer_ip_address;
-  address local_ip_address;
+  caf::ip_address peer_ip_address;
+  caf::ip_address local_ip_address;
   uint16_t old_state;
   uint16_t new_state;
 };
@@ -969,7 +985,7 @@ struct rib_entry_header_parser : parser<rib_entry_header_parser> {
   bool parse(Iterator& f, const Iterator& l, rib_entry_header& x) const {
     using namespace parsers;
     // TODO: why is there just a 1 here? Isn't that just the prefix byte?
-    auto pfx = bgp::prefix_parser{1, afi_ipv4_ ? address::ipv4 : address::ipv6};
+    auto pfx = bgp::prefix_parser{1, afi_ipv4_};
     auto p = b32be >> pfx >> b16be;
     return p(f, l, x.sequence_number, x.prefix, x.entry_count);
   }

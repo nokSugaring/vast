@@ -19,7 +19,9 @@
 #include <unordered_map>
 #include <random>
 
-#include "vast/address.hpp"
+#include <caf/ip_address.hpp>
+#include <caf/ip_subnet.hpp>
+
 #include "vast/concept/hashable/hash_append.hpp"
 #include "vast/concept/hashable/xxhash.hpp"
 #include "vast/detail/operators.hpp"
@@ -36,8 +38,8 @@ namespace format {
 namespace pcap {
 
 struct connection : detail::equality_comparable<connection> {
-  address src;
-  address dst;
+  caf::ip_address src;
+  caf::ip_address dst;
   port sport;
   port dport;
 
